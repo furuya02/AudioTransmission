@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>TITLE</title>
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script src="https://sdk.amazonaws.com/js/aws-sdk-2.283.1.min.js"></script>
+<script src="js/aws-iot-sdk-browser-bundle.js"></script>
+<script src="js/epoch.js"></script>
+<link rel="stylesheet" type="text/css" href="css/epoch.css">
+</head>
+<body>
+	<div id="gaugeChart" class="epoch gauge-large"></div>
+	<script>
+		var chart = $('#gaugeChart').epoch({
+					type: 'time.gauge',
+					value: 0.0,
+					format: function(v) { return (v*100).toFixed(1); }
+				}),
+				playing = false,
+				interval = null;
+
+		var awsIot = require('aws-iot-device-sdk');
+
+		const PoolId = 'ap-northeast-1:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx';
+		const region = 'ap-northeast-1';
+
+		async function getCredentials() {
+		  AWS.config.region = region;
+		  var cognitoidentity = new AWS.CognitoIdentity();
+		  var params = {
+			IdentityPoolId: PoolId
+		  };
+		  const identityId = await cognitoidentity.getId(params).promise();
+		  const data = await cognitoidentity.getCredentialsForIdentity(identityId).promise();
+			  var credentials = {
+				accessKey: data.Credentials.AccessKeyId,
+				secretKey: data.Credentials.SecretKey,
+				sessionToken: data.Credentials.SessionToken
+			  };
+			  return credentials;
+		}
+
+		const topic = "topic/level_meter";
+
+		async function job() {
+			const endpoint = 'xxxxxxxxxxxx-ats.iot.ap-northeast-1.amazonaws.com';
+			const clientId = 'sample_id'
+
+			const credentials = await getCredentials(); // Credentialsの取得
+
+			const deviceIot = awsIot.device({
+				region: region,
+				clientId: clientId,
+				accessKeyId: credentials.accessKey,
+				secretKey: credentials.secretKey,
+				sessionToken : credentials.sessionToken,
+				protocol: 'wss',
+				port: 443,
+				host: endpoint
+			});
+
+			deviceIot.on('message', function(_topic, payload) {
+				level = JSON.parse(payload)["level"]
+				level = level/30000
+				console.log('level: ' + level);
+				chart.update(level)
+			});
+
+			deviceIot.subscribe(topic, undefined, function (err, granted){
+				if( err ){
+					console.log('subscribe error: ' + err);
+				} else {
+					console.log('subscribe success');
+				}
+			});
+		  }
+
+		job();
+
+	</script>
+
+</body>
+</html>
