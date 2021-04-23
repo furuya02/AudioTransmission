@@ -28,6 +28,6 @@
 
 ## sample_5
 
-音声データをクラウドに送ってみました MQTT(basic ingest) + Amazon Kinesis Data Firehose + S3  (バイナリ)
+Audioデータをクラウドに送ってみました。　MQTT(basic ingest) + Amazon Kinesis Data Streams + Amazon Kinesis Data Firehose + S3 (バイナリ)
 
-参考:
+参考:https://dev.classmethod.jp/articles/audio_transmission_mqtt_basic_ingest_datastream_firehose_s3/
